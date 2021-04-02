@@ -44,7 +44,8 @@ class MainActivity : AppCompatActivity() {
 
 
         val stories = Story()
-        stories.url = "https://player.vimeo.com/external/403295268.sd.mp4?s=3446f787cefa52e7824d6ce6501db5261074d479&profile_id=165&oauth2_token_id=57447761"
+        stories.url = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        //stories.url = "https://player.vimeo.com/external/403295268.sd.mp4?s=3446f787cefa52e7824d6ce6501db5261074d479&profile_id=165&oauth2_token_id=57447761"
         stories.storyDate = System.currentTimeMillis() - (1 * (24 - 0) * 60 * 60 * 1000)
 
 
