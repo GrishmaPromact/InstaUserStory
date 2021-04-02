@@ -119,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         val storyUserModel4 = StoryUser()
         storyUserModel4.username = "User4"
         storyUserModel4.profilePicUrl = "https://randomuser.me/api/portraits/men/7.jpg"
+        //storyUserModel4.isPinStory = true
 
         val stories12= Story()
         stories12.url = "https://player.vimeo.com/external/403295710.sd.mp4?s=788b046826f92983ada6e5caf067113fdb49e209&profile_id=165&oauth2_token_id=57447761"
