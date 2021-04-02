@@ -167,11 +167,14 @@ class StoryDisplayFragment : Fragment(),
             binding.storyDisplayImage.hide()
             binding.storyDisplayVideoProgress.show()
             initializePlayer()
+            binding.ivUnMute.visibility = View.VISIBLE
         } else {
             binding.storyDisplayVideo.hide()
             binding.storyDisplayVideoProgress.hide()
             binding.storyDisplayImage.show()
             Glide.with(this).load(stories[counter].url).into(binding.storyDisplayImage)
+            binding.ivMute.visibility = View.GONE
+            binding.ivUnMute.visibility = View.GONE
         }
 
         val cal: Calendar = Calendar.getInstance(Locale.ENGLISH).apply {
@@ -235,6 +238,33 @@ class StoryDisplayFragment : Fragment(),
                 }
             }
         })
+
+        val curentVol = simpleExoPlayer?.volume
+
+
+        binding.ivUnMute.setOnClickListener {
+            if (curentVol == 0f) {
+                simpleExoPlayer?.volume = 1f
+                binding.ivUnMute.visibility = View.VISIBLE
+                binding.ivMute.visibility = View.GONE
+            } else {
+                simpleExoPlayer?.volume = 0f
+                binding.ivMute.visibility = View.VISIBLE
+                binding.ivUnMute.visibility = View.GONE
+            }
+        }
+
+        binding.ivMute.setOnClickListener {
+            if (curentVol == 0f) {
+                simpleExoPlayer?.volume = 0f
+                binding.ivUnMute.visibility = View.VISIBLE
+                binding.ivMute.visibility = View.GONE
+            } else {
+                simpleExoPlayer?.volume = 1f
+                binding.ivMute.visibility = View.GONE
+                binding.ivUnMute.visibility = View.VISIBLE
+            }
+        }
     }
 
     private fun setUpUi() {
@@ -355,6 +385,7 @@ class StoryDisplayFragment : Fragment(),
         binding.ivShare.setOnClickListener {
             Toast.makeText(requireActivity(), "Perform Share Action!!", Toast.LENGTH_SHORT).show()
         }
+
     }
 
 
