@@ -3,6 +3,7 @@ package com.c2m.storyviewer.adapter
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.MultiAutoCompleteTextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -28,39 +29,43 @@ class StoryUserAdapter(
 ) : RecyclerView.Adapter<StoryUserAdapter.StoryUserViewHolder>() {
 
     private lateinit var binding: ItemStoryUserBinding
-    var onSelectionChangeListener: ((storyUserModel : StoryUser, position :Int) -> Unit)? = null
+    var onSelectionChangeListener: ((storyUserModel: StoryUser, position: Int) -> Unit)? = null
     private var lastSelectedPosition = -1
 
     override fun onCreateViewHolder(
-        parent: ViewGroup, viewType: Int
+            parent: ViewGroup, viewType: Int
     ): StoryUserViewHolder {
         val binding =
-            ItemStoryUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                ItemStoryUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return StoryUserViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: StoryUserViewHolder, position: Int) {
         val storyUser = storyUsersList?.get(position)
 
-       /* if(storyUser?.isStorySeen==true){
-            holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context,R.color.visited_story_color)
-        }*/
+        /* if(storyUser?.isStorySeen==true){
+             holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context,R.color.visited_story_color)
+         }*/
 
-        if (storyUser!!.viewInex!! >= (storyUser.stories!!.size)){
-            holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context,R.color.visited_story_color)
+        if (storyUser?.isPinStory == false) {
+            if (storyUser!!.viewInex!! >= (storyUser.stories!!.size)) {
+                holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context, R.color.visited_story_color)
+            }
+        } else {
+            holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context, R.color.pending_story_color)
         }
 
         Glide.with(context)
-            .load(storyUser?.profilePicUrl)
-            .apply(RequestOptions().circleCrop())
-            .centerCrop()
-            .placeholder(R.drawable.user_image)
-            .into(holder.binding.ivUserProfile)
+                .load(storyUser?.profilePicUrl)
+                .apply(RequestOptions().circleCrop())
+                .centerCrop()
+                .placeholder(R.drawable.user_image)
+                .into(holder.binding.ivUserProfile)
 
         holder.binding.tvUserName.text = storyUser?.username.toString()
 
         holder.binding.root.setOnClickListener {
-            onSelectionChangeListener?.invoke(storyUser!!,position)
+            onSelectionChangeListener?.invoke(storyUser!!, position)
         }
     }
 
@@ -68,7 +73,7 @@ class StoryUserAdapter(
     override fun getItemCount(): Int = storyUsersList?.size ?: 0
 
 
-    fun updateList(storyUsersList: ArrayList<StoryUser>?) {
+    fun updateList(storyUsersList: MutableList<StoryUser>?) {
 
         //storyUsersList?.clear()
         //storyUsersList?.addAll(storyUsersList!!)
@@ -77,5 +82,5 @@ class StoryUserAdapter(
     }
 
     class StoryUserViewHolder(val binding: ItemStoryUserBinding) :
-        RecyclerView.ViewHolder(binding.root)
+            RecyclerView.ViewHolder(binding.root)
 }

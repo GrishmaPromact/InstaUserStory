@@ -348,6 +348,13 @@ class StoryDisplayFragment : Fragment(),
             binding.bottomSheet.rvComments.scrollToPosition(commentsAdapter?.itemCount!! - 1)
             binding.bottomSheet.etComment.setText("")
         }
+
+        binding.ivCloseStory.setOnClickListener {
+            requireActivity().onBackPressed()
+        }
+        binding.ivShare.setOnClickListener {
+            Toast.makeText(requireActivity(), "Perform Share Action!!", Toast.LENGTH_SHORT).show()
+        }
     }
 
 
@@ -421,4 +428,5 @@ class StoryDisplayFragment : Fragment(),
             }
         }
     }
+
 }

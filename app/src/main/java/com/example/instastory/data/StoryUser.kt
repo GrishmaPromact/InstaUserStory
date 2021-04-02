@@ -9,6 +9,8 @@ data class StoryUser(var username: String? = "",
                      var profilePicUrl: String ? = "",
                      var stories: MutableList<Story> ? = mutableListOf(),
                      var viewInex: Int? = 0,
+                     var isAllStorySeen : Boolean? = false,
+                     var isPinStory : Boolean? = false
 ) : Parcelable {
 
                      }
