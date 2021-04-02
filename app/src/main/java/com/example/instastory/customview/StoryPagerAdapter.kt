@@ -10,7 +10,7 @@ import com.example.instastory.screen.StoryDisplayFragment
 class StoryPagerAdapter constructor(fragmentManager: FragmentManager, private val storyList: ArrayList<StoryUser>)
     : FragmentStatePagerAdapter(fragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
 
-    override fun getItem(position: Int): Fragment = StoryDisplayFragment.newInstance(position, storyList[position])
+    override fun getItem(position: Int): Fragment = StoryDisplayFragment.newInstance(position, storyList[position],storyList)
 
     override fun getCount(): Int {
         return storyList.size

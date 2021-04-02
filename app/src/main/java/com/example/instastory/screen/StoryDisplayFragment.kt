@@ -2,24 +2,26 @@ package com.example.instastory.screen
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.format.DateFormat
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.example.instastory.R
+import com.example.instastory.adapter.CommentsAdapter
 import com.example.instastory.app.StoryApp
 import com.example.instastory.customview.StoriesProgressView
+import com.example.instastory.data.CommentsModel
 import com.example.instastory.data.Story
 import com.example.instastory.data.StoryUser
-import com.example.instastory.utils.OnSwipeTouchListener
 import com.example.instastory.databinding.FragmentStoryDisplayBinding
+import com.example.instastory.utils.OnSwipeTouchListener
 import com.example.instastory.utils.hide
 import com.example.instastory.utils.show
 import com.google.android.exoplayer2.ExoPlaybackException
@@ -31,10 +33,15 @@ import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory
 import com.google.android.exoplayer2.util.Util
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import java.util.*
+import kotlin.collections.ArrayList
 
 class StoryDisplayFragment : Fragment(),
     StoriesProgressView.StoriesListener {
+
+    private var isKeyboardShowing: Boolean? = false
+    private var commentsAdapter: CommentsAdapter? = null
 
     private val position: Int by
     lazy { arguments?.getInt(EXTRA_POSITION) ?: 0 }
@@ -42,9 +49,17 @@ class StoryDisplayFragment : Fragment(),
     private val storyUser: StoryUser by
     lazy {
         (arguments?.getParcelable<StoryUser>(
-            EXTRA_STORY_USER
+                EXTRA_STORY_USER
         ) as StoryUser)
     }
+
+    private val storyUserList: java.util.ArrayList<StoryUser> by
+    lazy {
+        (arguments?.getParcelableArrayList<StoryUser>(
+                EXTRA_STORY_USER_LIST
+        ) as java.util.ArrayList<StoryUser>)
+    }
+
 
     private val stories: MutableList<Story> by
     lazy { storyUser?.stories!! }
@@ -61,9 +76,9 @@ class StoryDisplayFragment : Fragment(),
     lateinit var binding: FragmentStoryDisplayBinding
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         binding = FragmentStoryDisplayBinding.inflate(layoutInflater, container, false)
         return binding.root
@@ -72,7 +87,8 @@ class StoryDisplayFragment : Fragment(),
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.storyDisplayVideo.useController = false
-        updateStory()
+
+        Log.e("hi::", "onViewCreated: counter $counter")
         setUpUi()
     }
 
@@ -84,26 +100,48 @@ class StoryDisplayFragment : Fragment(),
     override fun onStart() {
         super.onStart()
         //Grishma commented this line
-        //counter = restorePosition()
+         //counter= restorePosition()
+
+
+        //updateStory()
     }
 
     override fun onResume() {
         super.onResume()
-        onResumeCalled = true
-        if (stories[counter].isVideo() == true && !onVideoPrepared) {
-            simpleExoPlayer?.playWhenReady = false
-            return
-        }
+       onResumeCalled = true
+        //if(storyUser.viewIndex == 0 && stories[0].isStorySeen == false)
+            counter = storyUser.viewIndex!!
+        //else
+           // counter = storyUser.viewIndex!! + 1
 
-        simpleExoPlayer?.seekTo(5)
-        simpleExoPlayer?.playWhenReady = true
-        if (counter == 0) {
-            binding.storiesProgressView?.startStories()
-        } else {
-            // restart animation
-            counter = StoryDisplayActivity.progressState.get(arguments?.getInt(EXTRA_POSITION) ?: 0)
-            binding.storiesProgressView?.startStories(counter)
-        }
+        //Handler(Looper.getMainLooper()).postDelayed({
+            if (counter == 0) {
+                binding.storiesProgressView?.startStories()
+                updateStory()
+            } else {
+                // restart animation
+                if(storyUser.viewIndex == stories.size-1){
+                    storyUser.isStorySeen = true
+                    counter = 0
+                    updateStory()
+                    resumeCurrentStory()
+                }else {
+                    counter = StoryDisplayActivity.progressState.get(arguments?.getInt(EXTRA_POSITION)
+                            ?: 0)
+                    binding.storiesProgressView?.startStories(counter)
+                    updateStory()
+                }
+            }
+            if (stories[counter].isVideo() == true && !onVideoPrepared) {
+                simpleExoPlayer?.playWhenReady = false
+                return
+            }
+
+            simpleExoPlayer?.seekTo(5)
+            simpleExoPlayer?.playWhenReady = true
+       // }, 3000)
+
+
     }
 
     override fun onPause() {
@@ -118,20 +156,28 @@ class StoryDisplayFragment : Fragment(),
     }
 
     override fun onPrev() {
+        Log.e("hi::", "onPrev: counter before decrement: $counter")
         if (counter - 1 < 0) return
         --counter
         savePosition(counter)
+        Log.e("hi::", "onPrev: counter after decrement: $counter")
+        stories[counter].commentsList?.clear()
+        commentsAdapter?.updateList(stories[counter].commentsList)
         updateStory()
     }
 
     override fun onNext() {
-        if (stories.size <= counter + 1) {
-            return
-        }
+        stories[counter].commentsList?.clear()
+        commentsAdapter?.updateList(stories[counter].commentsList)
+       /* if (stories.size <= counter + 1) {
+           return
+        }*/
         Log.e("hi::", "onNext: counter before increment: $counter")
         ++counter
         savePosition(counter)
         Log.e("hi::", "onNext: counter after increment: $counter")
+        //stories[counter].commentsList?.clear()
+        //commentsAdapter?.updateList(stories[counter].commentsList)
         updateStory()
     }
 
@@ -141,6 +187,8 @@ class StoryDisplayFragment : Fragment(),
     }
 
     private fun updateStory() {
+        storyUserList[position].viewIndex = counter
+        stories[counter].isStorySeen = true
         simpleExoPlayer?.stop()
         if (stories[counter].isVideo() == true) {
             binding.storyDisplayVideo.show()
@@ -170,16 +218,16 @@ class StoryDisplayFragment : Fragment(),
         }
 
         mediaDataSourceFactory = CacheDataSourceFactory(
-            StoryApp.simpleCache,
-            DefaultHttpDataSourceFactory(
-                Util.getUserAgent(
-                    context,
-                    Util.getUserAgent(requireContext(), getString(R.string.app_name))
+                StoryApp.simpleCache,
+                DefaultHttpDataSourceFactory(
+                        Util.getUserAgent(
+                                context,
+                                Util.getUserAgent(requireContext(), getString(R.string.app_name))
+                        )
                 )
-            )
         )
         val mediaSource = ProgressiveMediaSource.Factory(mediaDataSourceFactory).createMediaSource(
-            Uri.parse(stories[counter].url)
+                Uri.parse(stories[counter].url)
         )
         simpleExoPlayer?.prepare(mediaSource, false, false)
         if (onResumeCalled) {
@@ -209,7 +257,7 @@ class StoryDisplayFragment : Fragment(),
                 } else {
                     binding.storyDisplayVideoProgress.hide()
                     binding.storiesProgressView?.getProgressWithIndex(counter)
-                        ?.setDuration(simpleExoPlayer?.duration ?: 8000L)
+                            ?.setDuration(simpleExoPlayer?.duration ?: 8000L)
                     onVideoPrepared = true
                     resumeCurrentStory()
                 }
@@ -271,15 +319,83 @@ class StoryDisplayFragment : Fragment(),
         binding.next.setOnTouchListener(touchListener)
 
         binding.storiesProgressView?.setStoriesCountDebug(
-            stories.size, position = arguments?.getInt(EXTRA_POSITION) ?: -1
+                stories.size, position = arguments?.getInt(EXTRA_POSITION) ?: -1
         )
         binding.storiesProgressView?.setAllStoryDuration(4000L)
         binding.storiesProgressView?.setStoriesListener(this)
 
         Glide.with(this).load(storyUser.profilePicUrl).circleCrop().into(binding.storyDisplayProfilePicture)
         binding.storyDisplayNick.text = storyUser.username
+
+
+
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val r = Rect();
+            binding.root.getWindowVisibleDisplayFrame(r);
+            val screenHeight = binding.root.rootView.height;
+
+            // r.bottom is the position above soft keypad or device button.
+            // if keypad is shown, the r.bottom is smaller than that before.
+            val keypadHeight = screenHeight - r.bottom;
+
+            Log.d("hi::", "keypadHeight = $keypadHeight");
+
+            if (keypadHeight > screenHeight * 0.15) { // 0.15 ratio is perhaps enough to determine keypad height.
+                // keyboard is opened
+                if (!isKeyboardShowing!!) {
+                    isKeyboardShowing = true
+                    onKeyboardVisibilityChanged(true)
+                }
+            }
+            else {
+                // keyboard is closed
+                if (isKeyboardShowing == true) {
+                    isKeyboardShowing = false
+                    onKeyboardVisibilityChanged(false)
+                }
+            }
+        };
+
+        initRV()
+
+        val bottomSheetBehavior = BottomSheetBehavior.from<View>(binding.bottomSheet.commentsLayout)
+
+        binding.bottomSheet.etComment.clearFocus()
+
+        binding.bottomSheet.etComment.setOnClickListener {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }
+
+
+        binding.bottomSheet.btnSendComment.setOnClickListener{
+            val commentsModel = CommentsModel()
+            commentsModel.userComment = binding.bottomSheet.etComment.text.toString()
+            commentsModel.userProfileUrl = storyUser.profilePicUrl
+
+            stories[counter].commentsList?.add(commentsModel)
+            commentsAdapter?.updateList(stories[counter].commentsList!!)
+            binding.bottomSheet.rvComments.scrollToPosition(commentsAdapter?.itemCount!! - 1)
+            binding.bottomSheet.etComment.setText("")
+        }
     }
 
+    private fun onKeyboardVisibilityChanged(opened: Boolean) {
+        Log.d("hi::", "onKeyboardVisibilityChanged: keyboard $opened")
+        //isKeyboardOpen = opened
+
+        if (opened) {
+            pauseCurrentStory()
+        } else {
+            resumeCurrentStory()
+        }
+    }
+
+    private fun initRV() {
+
+        commentsAdapter = CommentsAdapter(mutableListOf(), requireActivity())
+        binding.bottomSheet.rvComments.adapter = commentsAdapter
+
+    }
     private fun showStoryOverlay() {
         if (binding.storyOverlay == null || binding.storyOverlay.alpha != 0F) return
 
@@ -322,11 +438,14 @@ class StoryDisplayFragment : Fragment(),
     companion object {
         private const val EXTRA_POSITION = "EXTRA_POSITION"
         private const val EXTRA_STORY_USER = "EXTRA_STORY_USER"
-        fun newInstance(position: Int, story: StoryUser): StoryDisplayFragment {
+        private const val EXTRA_STORY_USER_LIST = "EXTRA_STORY_USER_LIST"
+
+        fun newInstance(position: Int, story: StoryUser, storyList: ArrayList<StoryUser>): StoryDisplayFragment {
             return StoryDisplayFragment().apply {
                 arguments = Bundle().apply {
                     putInt(EXTRA_POSITION, position)
                     putParcelable(EXTRA_STORY_USER, story)
+                    putParcelableArrayList(EXTRA_STORY_USER_LIST,storyList)
                 }
             }
         }

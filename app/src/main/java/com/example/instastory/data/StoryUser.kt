@@ -7,7 +7,9 @@ import kotlinx.android.parcel.Parcelize
 @Parcelize
 data class StoryUser(var username: String? = "",
                      var profilePicUrl: String ? = "",
-                     var stories: MutableList<Story> ? = mutableListOf()
+                     var stories: MutableList<Story> ? = mutableListOf(),
+                     var isStorySeen : Boolean ? = false,
+                     var viewIndex : Int ? = 0
 ) : Parcelable {
 
                      }

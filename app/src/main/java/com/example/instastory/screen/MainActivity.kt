@@ -131,6 +131,21 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if(requestCode == LAUNCH_STORY_DISPLAY_ACTIVITY && resultCode == RESULT_OK){
+            if(data?.hasExtra("storyUserList") == true) {
+                storyUsersList = data.getParcelableArrayListExtra("storyUserList")
+                position = data.extras?.getInt("position")
+
+                if(storyUsersList?.get(position!!)?.viewIndex!! == (storyUsersList?.get(position!!)?.stories?.size!!).minus(1)){
+                    storyUsersList?.get(position!!)?.viewIndex = 0
+                    storyUsersList?.get(position!!)?.isStorySeen = true
+                }
+                storyUsersList?.forEachIndexed { index, storyUser ->
+                    if(storyUser.viewIndex == storyUser.stories?.size?.minus(1)){
+                       storyUser.isStorySeen = true
+                    }
+                }
+                storyUserAdapter?.updateList(storyUsersList)
+            }
            /* if(data?.hasExtra("storyUserList") == true){
                 storyUsersList = data.getParcelableArrayListExtra("storyUserList")
 

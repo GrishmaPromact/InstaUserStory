@@ -2,8 +2,10 @@ package com.example.instastory.screen
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import android.util.SparseIntArray
 import android.widget.Toast
@@ -51,7 +53,7 @@ class StoryDisplayActivity : AppCompatActivity(),
             try {
                 fakeDrag(false)
             } catch (e: Exception) {
-                //NO OP
+               e.printStackTrace()
             }
         }
     }
@@ -61,11 +63,11 @@ class StoryDisplayActivity : AppCompatActivity(),
             try {
                 fakeDrag(true)
             } catch (e: Exception) {
-                //NO OP
+               e.printStackTrace()
             }
         } else {
             //there is no next story
-            finish()
+            onBackPressed()
             Toast.makeText(this, "All stories displayed.", Toast.LENGTH_LONG).show()
         }
     }
@@ -205,5 +207,17 @@ class StoryDisplayActivity : AppCompatActivity(),
 
     companion object {
         val progressState = SparseIntArray()
+    }
+
+    override fun onBackPressed() {
+        Log.e("hi::", "onBackPressed: onprogress state " + progressState[currentPage])
+        //super.onBackPressed()
+        //storyUserList[currentPage].stories = stories
+        storyUserList[currentPage].viewIndex = progressState[currentPage]
+        val intent = Intent()
+        intent.putParcelableArrayListExtra("storyUserList", storyUserList)
+        intent.putExtra("position", currentPage)
+        setResult(RESULT_OK, intent)
+        finish()
     }
 }

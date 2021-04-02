@@ -3,6 +3,7 @@ package com.c2m.storyviewer.adapter
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -41,9 +42,9 @@ class StoryUserAdapter(
     override fun onBindViewHolder(holder: StoryUserViewHolder, position: Int) {
         val storyUser = storyUsersList?.get(position)
 
-       /* if(storyUser?.isStorySeen==true){
+        if(storyUser?.isStorySeen==true){
             holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context,R.color.visited_story_color)
-        }*/
+        }
 
         Glide.with(context)
             .load(storyUser?.profilePicUrl)
