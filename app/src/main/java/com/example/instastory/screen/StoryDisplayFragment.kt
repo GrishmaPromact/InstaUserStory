@@ -2,6 +2,7 @@ package com.example.instastory.screen
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
 import android.text.format.DateFormat
@@ -14,8 +15,10 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.example.instastory.R
+import com.example.instastory.adapter.CommentsAdapter
 import com.example.instastory.app.StoryApp
 import com.example.instastory.customview.StoriesProgressView
+import com.example.instastory.data.CommentsModel
 import com.example.instastory.data.Story
 import com.example.instastory.data.StoryUser
 import com.example.instastory.utils.OnSwipeTouchListener
@@ -31,10 +34,15 @@ import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory
 import com.google.android.exoplayer2.upstream.cache.CacheDataSourceFactory
 import com.google.android.exoplayer2.util.Util
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import java.util.*
 
 class StoryDisplayFragment : Fragment(),
     StoriesProgressView.StoriesListener {
+
+    private var updateStoryUserList: ((Int, Int) -> Unit)? = null
+    private var isKeyboardShowing: Boolean? = false
+    private var commentsAdapter: CommentsAdapter? = null
 
     private val position: Int by
     lazy { arguments?.getInt(EXTRA_POSITION) ?: 0 }
@@ -72,6 +80,8 @@ class StoryDisplayFragment : Fragment(),
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.storyDisplayVideo.useController = false
+        counter = restorePosition()
+        //updateStoryUserList?.let { it(position,counter) }
         updateStory()
         setUpUi()
     }
@@ -84,12 +94,16 @@ class StoryDisplayFragment : Fragment(),
     override fun onStart() {
         super.onStart()
         //Grishma commented this line
-        //counter = restorePosition()
+        counter = restorePosition()
+        Log.d("onStart","$counter")
     }
 
     override fun onResume() {
         super.onResume()
         onResumeCalled = true
+        //counter = restorePosition()
+        updateStoryUserList?.let { it(position,counter) }
+        updateStory()
         if (stories[counter].isVideo() == true && !onVideoPrepared) {
             simpleExoPlayer?.playWhenReady = false
             return
@@ -118,13 +132,17 @@ class StoryDisplayFragment : Fragment(),
     }
 
     override fun onPrev() {
+
         if (counter - 1 < 0) return
         --counter
         savePosition(counter)
+        stories[counter].commentsList?.clear()
+        commentsAdapter?.updateList(stories[counter].commentsList)
         updateStory()
     }
 
     override fun onNext() {
+
         if (stories.size <= counter + 1) {
             return
         }
@@ -133,6 +151,8 @@ class StoryDisplayFragment : Fragment(),
         savePosition(counter)
         Log.e("hi::", "onNext: counter after increment: $counter")
         updateStory()
+        stories[counter].commentsList?.clear()
+        commentsAdapter?.updateList(stories[counter].commentsList)
     }
 
     override fun onDestroyView() {
@@ -275,11 +295,79 @@ class StoryDisplayFragment : Fragment(),
         )
         binding.storiesProgressView?.setAllStoryDuration(4000L)
         binding.storiesProgressView?.setStoriesListener(this)
-
+        binding.storiesProgressView?.startStories(counter)
         Glide.with(this).load(storyUser.profilePicUrl).circleCrop().into(binding.storyDisplayProfilePicture)
         binding.storyDisplayNick.text = storyUser.username
+
+
+        binding.root.viewTreeObserver.addOnGlobalLayoutListener {
+            val r = Rect();
+            binding.root.getWindowVisibleDisplayFrame(r);
+            val screenHeight = binding.root.rootView.height;
+
+            // r.bottom is the position above soft keypad or device button.
+            // if keypad is shown, the r.bottom is smaller than that before.
+            val keypadHeight = screenHeight - r.bottom;
+
+            Log.d("hi::", "keypadHeight = $keypadHeight");
+
+            if (keypadHeight > screenHeight * 0.15) { // 0.15 ratio is perhaps enough to determine keypad height.
+                // keyboard is opened
+                if (!isKeyboardShowing!!) {
+                    isKeyboardShowing = true
+                    onKeyboardVisibilityChanged(true)
+                }
+            }
+            else {
+                // keyboard is closed
+                if (isKeyboardShowing == true) {
+                    isKeyboardShowing = false
+                    onKeyboardVisibilityChanged(false)
+                }
+            }
+        };
+
+        initRV()
+
+        val bottomSheetBehavior = BottomSheetBehavior.from<View>(binding.bottomSheet.commentsLayout)
+
+        binding.bottomSheet.etComment.clearFocus()
+
+        binding.bottomSheet.etComment.setOnClickListener {
+            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }
+
+
+        binding.bottomSheet.btnSendComment.setOnClickListener{
+            val commentsModel = CommentsModel()
+            commentsModel.userComment = binding.bottomSheet.etComment.text.toString()
+            commentsModel.userProfileUrl = storyUser.profilePicUrl
+
+            stories[counter].commentsList?.add(commentsModel)
+            commentsAdapter?.updateList(stories[counter].commentsList!!)
+            binding.bottomSheet.rvComments.scrollToPosition(commentsAdapter?.itemCount!! - 1)
+            binding.bottomSheet.etComment.setText("")
+        }
     }
 
+
+    private fun onKeyboardVisibilityChanged(opened: Boolean) {
+        Log.d("hi::", "onKeyboardVisibilityChanged: keyboard $opened")
+        //isKeyboardOpen = opened
+
+        if (opened) {
+            pauseCurrentStory()
+        } else {
+            resumeCurrentStory()
+        }
+    }
+
+    private fun initRV() {
+
+        commentsAdapter = CommentsAdapter(mutableListOf(), requireActivity())
+        binding.bottomSheet.rvComments.adapter = commentsAdapter
+
+    }
     private fun showStoryOverlay() {
         if (binding.storyOverlay == null || binding.storyOverlay.alpha != 0F) return
 
@@ -300,6 +388,7 @@ class StoryDisplayFragment : Fragment(),
 
     private fun savePosition(pos: Int) {
         StoryDisplayActivity.progressState.put(position, pos)
+        updateStoryUserList?.let { it(position,pos) }
     }
 
     private fun restorePosition(): Int {
@@ -322,12 +411,13 @@ class StoryDisplayFragment : Fragment(),
     companion object {
         private const val EXTRA_POSITION = "EXTRA_POSITION"
         private const val EXTRA_STORY_USER = "EXTRA_STORY_USER"
-        fun newInstance(position: Int, story: StoryUser): StoryDisplayFragment {
+        fun newInstance(position: Int, story: StoryUser,updateStoryUserList: (userIndex: Int, viewIndex: Int) -> Unit): StoryDisplayFragment {
             return StoryDisplayFragment().apply {
                 arguments = Bundle().apply {
                     putInt(EXTRA_POSITION, position)
                     putParcelable(EXTRA_STORY_USER, story)
                 }
+                this.updateStoryUserList = updateStoryUserList
             }
         }
     }

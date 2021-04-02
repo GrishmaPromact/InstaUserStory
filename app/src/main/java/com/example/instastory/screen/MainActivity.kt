@@ -3,10 +3,12 @@ package com.example.instastory.screen
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import com.c2m.storyviewer.adapter.StoryUserAdapter
 import com.example.instastory.data.Story
 import com.example.instastory.data.StoryUser
 import com.example.instastory.databinding.ActivityMainBinding
+import com.example.instastory.utils.StoryGenerator
 
 class MainActivity : AppCompatActivity() {
 
@@ -18,6 +20,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     companion object{
         val LAUNCH_STORY_DISPLAY_ACTIVITY = 101
+        const val UPDATED_STORY_USER_LIST = "updatedStoryUserList"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         storyUsersList = getAnotherUsersList()
-        initRV(storyUsersList!!)
+        initRV()
     }
 
 
@@ -112,7 +115,7 @@ class MainActivity : AppCompatActivity() {
         return storyUserList
     }
 
-    private fun initRV(storyUsersList: MutableList<StoryUser>) {
+    private fun initRV() {
 
         storyUserAdapter = StoryUserAdapter(storyUsersList, this)
         binding.rvStoryUser.adapter = storyUserAdapter
@@ -129,8 +132,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
         if(requestCode == LAUNCH_STORY_DISPLAY_ACTIVITY && resultCode == RESULT_OK){
+
+            if(data?.hasExtra(UPDATED_STORY_USER_LIST) == true) {
+                storyUsersList = data.getParcelableArrayListExtra(UPDATED_STORY_USER_LIST)
+                storyUserAdapter?.updateList(storyUsersList)
+
+                storyUsersList?.forEachIndexed { index, storyUser ->
+                    Log.d("viewedMain", "${storyUsersList!![index].viewInex}")
+                }
+            }
+
+
            /* if(data?.hasExtra("storyUserList") == true){
                 storyUsersList = data.getParcelableArrayListExtra("storyUserList")
 

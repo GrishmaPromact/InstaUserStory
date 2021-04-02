@@ -2,6 +2,8 @@ package com.example.instastory.screen
 
 import android.animation.Animator
 import android.animation.ValueAnimator
+import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -65,18 +67,29 @@ class StoryDisplayActivity : AppCompatActivity(),
             }
         } else {
             //there is no next story
-            finish()
+            onBackPressed()
             Toast.makeText(this, "All stories displayed.", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun setUpPager() {
         //val storyUserList = StoryGenerator.generateStories()
+
+        progressState.clear()
+        storyUserList.forEachIndexed { index, storyUser ->
+            if (storyUser!!.viewInex!! < storyUser.stories!!.size)
+                progressState.put(index, storyUser.viewInex!!)
+            else progressState.put(index, 0)
+        }
+
+        Log.d("progressState","$progressState")
+
         preLoadStories(storyUserList)
 
         pagerAdapter = StoryPagerAdapter(
-            supportFragmentManager,
-            storyUserList
+                supportFragmentManager,
+                storyUserList,
+                ::updateStoryUserList
         )
         binding.viewPager?.adapter = pagerAdapter
         binding.viewPager?.currentItem = currentPage
@@ -205,5 +218,22 @@ class StoryDisplayActivity : AppCompatActivity(),
 
     companion object {
         val progressState = SparseIntArray()
+    }
+
+    override fun onBackPressed() {
+        storyUserList.forEachIndexed { index, storyUser ->
+            Log.d("viewedIndex", "${storyUserList[index].viewInex}")
+        }
+        val intent = Intent()
+        intent.putParcelableArrayListExtra(MainActivity.UPDATED_STORY_USER_LIST,storyUserList)
+        setResult(Activity.RESULT_OK,intent)
+        finish()
+        super.onBackPressed()
+    }
+
+    private fun updateStoryUserList(userIndex: Int, viewIndex: Int){
+        if (storyUserList[userIndex].viewInex!! < (viewIndex+1)){
+            storyUserList[userIndex].viewInex = (viewIndex+1)
+        }
     }
 }

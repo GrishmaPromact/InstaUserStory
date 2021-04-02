@@ -3,6 +3,7 @@ package com.c2m.storyviewer.adapter
 import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
@@ -22,7 +23,7 @@ import java.util.ArrayList
  * @company : Saeculum Solutions Pvt. Ltd.
  */
 class StoryUserAdapter(
-        private val storyUsersList: MutableList<StoryUser>?,
+        private var storyUsersList: MutableList<StoryUser>?,
         private val context: Context
 ) : RecyclerView.Adapter<StoryUserAdapter.StoryUserViewHolder>() {
 
@@ -45,6 +46,10 @@ class StoryUserAdapter(
             holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context,R.color.visited_story_color)
         }*/
 
+        if (storyUser!!.viewInex!! >= (storyUser.stories!!.size)){
+            holder.binding.ivUserProfile.borderColor = ContextCompat.getColor(context,R.color.visited_story_color)
+        }
+
         Glide.with(context)
             .load(storyUser?.profilePicUrl)
             .apply(RequestOptions().circleCrop())
@@ -63,11 +68,11 @@ class StoryUserAdapter(
     override fun getItemCount(): Int = storyUsersList?.size ?: 0
 
 
-    fun updateList(storyUsersList1: ArrayList<StoryUser>?) {
+    fun updateList(storyUsersList: ArrayList<StoryUser>?) {
 
-        storyUsersList?.clear()
-        storyUsersList?.addAll(storyUsersList1!!)
-        //storyUsersList == storyUsersList1
+        //storyUsersList?.clear()
+        //storyUsersList?.addAll(storyUsersList!!)
+        this.storyUsersList = storyUsersList
         notifyDataSetChanged()
     }
 
