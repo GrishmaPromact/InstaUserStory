@@ -10,7 +10,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:name=".app.StoryApp">
+        android:name=".app.StoryApp"
+        android:theme="@style/AppTheme">
         <activity android:name=".screen.MainActivity"
             android:theme="@style/Theme.InstaStory">
             <intent-filter>
@@ -21,7 +22,7 @@
         </activity>
 
         <activity android:name=".screen.StoryDisplayActivity"
-            android:theme="@style/AppTheme">
+            android:windowSoftInputMode="adjustResize|stateAlwaysHidden">
         </activity>
     </application>
 
