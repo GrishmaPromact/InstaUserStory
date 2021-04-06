@@ -3,11 +3,11 @@ package com.example.instastory.screen
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.res.Resources
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import com.example.instastory.R
 import com.example.instastory.databinding.LayoutBottomSheetBinding
@@ -23,10 +23,18 @@ class BottomSheet : BottomSheetDialogFragment() {
     var bottomSheetBehavior: BottomSheetBehavior<*>? = null
     var bi: LayoutBottomSheetBinding? = null
 
-    private class MyWebViewClient : WebViewClient() {
+    inner class MyWebViewClient : WebViewClient() {
+        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+            super.onPageStarted(view, url, favicon)
+        }
         override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
             view.loadUrl(url)
             return true
+        }
+
+        override fun onPageFinished(view: WebView?, url: String?) {
+            super.onPageFinished(view, url)
+            bi?.progressBar?.visibility = View.GONE
         }
     }
 
@@ -132,7 +140,7 @@ class BottomSheet : BottomSheetDialogFragment() {
         fun onBottomSheetClose()
     }
 
-    fun setOnBottomSheetCloseListener(listener:OnBottomSheetCloseListener) {
+    fun setOnBottomSheetCloseListener(listener: OnBottomSheetCloseListener) {
         onBottomSheetCloseListener = listener
     }
 
