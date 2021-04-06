@@ -18,6 +18,7 @@ import com.example.instastory.data.StoryUser
 import com.example.instastory.utils.CubeOutTransformer
 import com.example.instastory.R
 import com.example.instastory.databinding.ActivityStoryDisplayBinding
+import com.example.instastory.utils.AndroidBug5497Workaround
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DataSpec
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
@@ -39,6 +40,7 @@ class StoryDisplayActivity : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         binding = ActivityStoryDisplayBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        //AndroidBug5497Workaround.assistActivity(this);
         position = intent.extras?.getInt("position")
         currentPage = position!!
 

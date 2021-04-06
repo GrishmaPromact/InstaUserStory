@@ -8,7 +8,7 @@ import android.view.animation.Animation
 import android.view.animation.Animation.AnimationListener
 import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
-import com.c2m.storyviewer.utils.PausableScaleAnimation
+import com.example.instastory.utils.PausableScaleAnimation
 import com.example.instastory.R
 
 class PausableProgressBar @JvmOverloads constructor(
@@ -145,6 +145,6 @@ class PausableProgressBar @JvmOverloads constructor(
     }
 
     companion object {
-        private const val DEFAULT_PROGRESS_DURATION = 4000L
+        private const val DEFAULT_PROGRESS_DURATION = 8000L
     }
 }
